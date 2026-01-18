@@ -198,6 +198,10 @@ body{
   z-index: 2;
 }
 
+.typingOverlay::placeholder {
+  color: rgba(233,236,255,.10);
+}
+
 .reference.ok { color: var(--good); }
 
 .reference.bad {
