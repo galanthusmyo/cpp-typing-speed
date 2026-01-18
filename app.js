@@ -1,10 +1,9 @@
-/* C++ Lab Typer (GitHub auto-loader) */
+/* C++ Lab Typer (GitHub auto-loader + overlay typing + countdown practice) */
 
 const GH_OWNER = "acs-aburada";
 const GH_REPO = "oop-2025";
 const GH_BRANCH = "main";
 
-// GitHub APIs
 const GH_TREE_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/git/trees/${GH_BRANCH}?recursive=1`;
 const GH_RAW_BASE = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/`;
 
@@ -12,18 +11,23 @@ const fileSelect = document.getElementById("fileSelect");
 const btnRandom = document.getElementById("btnRandom");
 const btnLoadGithub = document.getElementById("btnLoadGithub");
 
+const timerSelect = document.getElementById("timerSelect");
+const customSeconds = document.getElementById("customSeconds");
+const remainingTime = document.getElementById("remainingTime");
+
 const btnStart = document.getElementById("btnStart");
 const btnReset = document.getElementById("btnReset");
 const btnFinish = document.getElementById("btnFinish");
 
 const typing = document.getElementById("typing");
-const reference = document.getElementById("reference");
+const overlay = document.getElementById("overlay");
 
 const chipFile = document.getElementById("chipFile");
 const chipChars = document.getElementById("chipChars");
 const chipLines = document.getElementById("chipLines");
 
 const statTime = document.getElementById("statTime");
+const statRemain = document.getElementById("statRemain");
 const statWpmGross = document.getElementById("statWpmGross");
 const statWpmNet = document.getElementById("statWpmNet");
 const statAcc = document.getElementById("statAcc");
@@ -48,9 +52,11 @@ const btnHelp = document.getElementById("btnHelp");
 const helpModal = document.getElementById("helpModal");
 const btnCloseHelp = document.getElementById("btnCloseHelp");
 
-// State
-let cppPaths = [];            // list of repo paths: "lab_01/xxx.cpp"
-let fileCache = new Map();    // path -> text
+// GitHub loaded files
+let cppPaths = [];
+let fileCache = new Map(); // path -> text
+
+// Run state
 let targetText = "";
 let currentFileName = "";
 
@@ -58,6 +64,10 @@ let started = false;
 let finished = false;
 let startTs = 0;
 let rafId = 0;
+
+// Countdown
+let countdownSecondsTotal = 300; // default 5 min
+let countdownSecondsLeft = 300;
 
 function escapeHtml(s) {
   return s
@@ -75,6 +85,65 @@ function countLines(s) {
 
 function formatSeconds(sec) {
   return `${sec.toFixed(2)}s`;
+}
+
+function formatCountdown(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const mm = String(Math.floor(s / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
+/**
+ * Removes // line comments safely:
+ * - Ignores // inside string "..."
+ * - Ignores // inside char '...'
+ */
+function stripLineCommentsCpp(text) {
+  const lines = text.replaceAll("\r\n", "\n").split("\n");
+
+  const cleaned = lines.map(line => {
+    let inString = false;
+    let inChar = false;
+    let escaped = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      const next = i + 1 < line.length ? line[i + 1] : "";
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (c === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (!inChar && c === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString && c === "'") {
+        inChar = !inChar;
+        continue;
+      }
+
+      if (!inString && !inChar && c === "/" && next === "/") {
+        return line.slice(0, i).trimEnd();
+      }
+    }
+
+    return line;
+  });
+
+  while (cleaned.length > 0 && cleaned[cleaned.length - 1].trim() === "") {
+    cleaned.pop();
+  }
+
+  return cleaned.join("\n");
 }
 
 function calcStats(typed, target, seconds) {
@@ -124,7 +193,7 @@ function getRank(netWpm, accuracy) {
   return { name: "🐌 Turtle", color: "rgba(255,60,78,.14)" };
 }
 
-function renderReference(typed, target) {
+function renderOverlay(typed, target) {
   if (!target) return "(Select a file to begin)";
 
   const tLen = target.length;
@@ -138,14 +207,15 @@ function renderReference(typed, target) {
 
     let cls = "pending";
     if (i < typedLen) cls = (typed[i] === ch) ? "ok" : "bad";
+
     if (i === typedLen && !finished) cls += " cursor";
 
-    out += `<span class="${cls}">${safe}</span>`;
+    out += `<span class="reference ${cls}">${safe}</span>`;
   }
 
   if (typedLen > tLen) {
     const extra = typed.slice(tLen);
-    out += `<span class="bad">${escapeHtml(extra)}</span>`;
+    out += `<span class="reference bad">${escapeHtml(extra)}</span>`;
   }
 
   return out;
@@ -156,6 +226,23 @@ function setUiEnabled(enabled) {
   btnReset.disabled = !enabled;
   btnFinish.disabled = !enabled;
   typing.disabled = !enabled;
+}
+
+function getSelectedCountdownSeconds() {
+  if (timerSelect.value === "custom") {
+    const v = parseInt(customSeconds.value, 10);
+    if (Number.isFinite(v) && v >= 10) return v;
+    return 60;
+  }
+  return parseInt(timerSelect.value, 10);
+}
+
+function resetCountdownFromSelector() {
+  countdownSecondsTotal = getSelectedCountdownSeconds();
+  countdownSecondsLeft = countdownSecondsTotal;
+
+  remainingTime.textContent = formatCountdown(countdownSecondsLeft);
+  statRemain.textContent = formatCountdown(countdownSecondsLeft);
 }
 
 function resetRun(keepFile = true) {
@@ -178,16 +265,18 @@ function resetRun(keepFile = true) {
   statErrRate.textContent = "0%";
   statProg.textContent = "0%";
 
+  resetCountdownFromSelector();
+
   if (!keepFile) {
     targetText = "";
     currentFileName = "";
     chipFile.textContent = "No file loaded";
     chipChars.textContent = "0 chars";
     chipLines.textContent = "0 lines";
-    reference.textContent = "(Loading from GitHub…)";
+    overlay.textContent = "(Loading from GitHub…)";
     setUiEnabled(false);
   } else {
-    reference.innerHTML = renderReference("", targetText);
+    overlay.innerHTML = renderOverlay("", targetText);
     setUiEnabled(!!targetText);
   }
 }
@@ -197,6 +286,9 @@ function updateLoop() {
 
   const now = performance.now();
   const seconds = (now - startTs) / 1000;
+
+  // countdown
+  countdownSecondsLeft = Math.max(0, countdownSecondsTotal - seconds);
 
   const typed = typing.value;
   const stats = calcStats(typed, targetText, seconds);
@@ -209,9 +301,13 @@ function updateLoop() {
   statErrRate.textContent = `${Math.max(0, Math.min(100, stats.errorRate)).toFixed(1)}%`;
   statProg.textContent = `${Math.min(100, stats.progress).toFixed(1)}%`;
 
-  reference.innerHTML = renderReference(typed, targetText);
+  remainingTime.textContent = formatCountdown(countdownSecondsLeft);
+  statRemain.textContent = formatCountdown(countdownSecondsLeft);
 
-  if (typed.length >= targetText.length && targetText.length > 0) {
+  overlay.innerHTML = renderOverlay(typed, targetText);
+
+  // auto-finish on countdown end
+  if (countdownSecondsLeft <= 0) {
     finishRun();
     return;
   }
@@ -264,7 +360,7 @@ function finishRun() {
   finalErr.textContent = `${stats.incorrect}`;
   finalErrRate.textContent = `${errRate.toFixed(1)}%`;
 
-  // Save best score per file
+  // Save best per file
   const key = `labtyper_best_${currentFileName}`;
   const prev = localStorage.getItem(key);
   const current = { net, gross, acc: Number(acc.toFixed(1)), time: Number(seconds.toFixed(2)) };
@@ -286,10 +382,12 @@ function finishRun() {
   typing.disabled = true;
 }
 
+// GitHub helpers
 async function fetchJson(url) {
   const res = await fetch(url, {
     headers: { "Accept": "application/vnd.github+json" }
   });
+
   if (!res.ok) {
     const msg = await res.text().catch(() => "");
     throw new Error(`Request failed (${res.status}): ${msg || res.statusText}`);
@@ -301,8 +399,14 @@ async function fetchRaw(path) {
   const url = GH_RAW_BASE + path;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch raw file: ${path}`);
-  const text = await res.text();
-  return text.replaceAll("\r\n", "\n");
+
+  let text = await res.text();
+  text = text.replaceAll("\r\n", "\n");
+
+  // remove // comments
+  text = stripLineCommentsCpp(text);
+
+  return text;
 }
 
 function setDropdownLoading(text) {
@@ -346,16 +450,16 @@ async function loadCppListFromGitHub() {
 
     if (cppPaths.length === 0) {
       populateDropdown([]);
-      reference.textContent = "(No .cpp files found in this repository)";
+      overlay.textContent = "(No .cpp files found in this repository)";
       return;
     }
 
     populateDropdown(cppPaths);
-    reference.textContent = "(Select a file to begin)";
+    overlay.textContent = "(Select a file to begin)";
   } catch (e) {
     console.error(e);
     populateDropdown([]);
-    reference.textContent =
+    overlay.textContent =
       "Failed to load from GitHub. Possible rate limit.\n\nTry again using 'Reload from GitHub'.";
   }
 }
@@ -366,9 +470,8 @@ async function loadFileByPath(path) {
   currentFileName = path;
   chipFile.textContent = currentFileName;
 
-  // cached?
   if (!fileCache.has(path)) {
-    reference.textContent = "(Fetching file content...)";
+    overlay.textContent = "(Fetching file content...)";
     const text = await fetchRaw(path);
     fileCache.set(path, text);
   }
@@ -382,7 +485,7 @@ async function loadFileByPath(path) {
   setUiEnabled(true);
   btnStart.disabled = false;
 
-  reference.innerHTML = renderReference("", targetText);
+  overlay.innerHTML = renderOverlay("", targetText);
 }
 
 function pickRandomFile() {
@@ -392,7 +495,12 @@ function pickRandomFile() {
   loadFileByPath(p);
 }
 
-// TAB => 4 spaces in textarea
+/* === Scroll sync (textarea scroll moves overlay) === */
+typing.addEventListener("scroll", () => {
+  overlay.style.transform = `translateY(-${typing.scrollTop}px)`;
+});
+
+/* === TAB inserts 4 spaces === */
 typing.addEventListener("keydown", (e) => {
   if (e.key === "Tab") {
     e.preventDefault();
@@ -404,14 +512,28 @@ typing.addEventListener("keydown", (e) => {
   }
 });
 
-// Start timer on first input
+/* === Start timer on first input === */
 typing.addEventListener("input", () => {
   if (!started && !finished && targetText) {
     startRun();
   }
 });
 
-// UI events
+/* Timer selection logic */
+timerSelect.addEventListener("change", () => {
+  const isCustom = timerSelect.value === "custom";
+  customSeconds.disabled = !isCustom;
+  if (isCustom) {
+    customSeconds.focus();
+  }
+  if (!started) resetCountdownFromSelector();
+});
+
+customSeconds.addEventListener("input", () => {
+  if (!started) resetCountdownFromSelector();
+});
+
+/* Buttons */
 btnLoadGithub.addEventListener("click", async () => {
   await loadCppListFromGitHub();
 });
@@ -441,13 +563,13 @@ btnCloseResult.addEventListener("click", () => {
   resultBox.hidden = true;
 });
 
-// Help modal
+/* Help modal */
 btnHelp.addEventListener("click", () => helpModal.hidden = false);
 btnCloseHelp.addEventListener("click", () => helpModal.hidden = true);
 helpModal.addEventListener("click", (e) => {
   if (e.target === helpModal) helpModal.hidden = true;
 });
 
-// Boot
+/* Init */
 resetRun(false);
 loadCppListFromGitHub();
