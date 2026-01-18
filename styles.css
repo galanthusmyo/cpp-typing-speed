@@ -198,14 +198,17 @@ body{
   z-index: 2;
 }
 
-.reference .ok{color: var(--good)}
-.reference .bad{
+.reference.ok { color: var(--good); }
+
+.reference.bad {
   color: var(--bad);
   background: rgba(255,60,78,.12);
   border-radius: 4px;
 }
-.reference .pending{color: rgba(233,236,255,.65)}
-.reference .cursor{
+
+.reference.pending { color: rgba(233,236,255,.35); }
+
+.reference.cursor {
   background: rgba(109,123,255,.22);
   border-radius: 4px;
   outline: 1px solid rgba(109,123,255,.45);
