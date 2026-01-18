@@ -1,7 +1,231 @@
 <!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>testing</title></head>
-  <body>
-    <h1>test</h1>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>C++ Lab Typer (Speed Trainer)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div class="title">
+        <div class="name">C++ Lab Typer</div>
+        <div class="subtitle">Speed + accuracy training using real OOP labs</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnHelp" class="btn ghost">Help</button>
+      <a class="btn ghost" href="https://github.com/acs-aburada/oop-2025" target="_blank" rel="noreferrer">Source Repo</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>1) Load labs</h2>
+
+      <div class="row">
+        <div class="chip" id="chipRepo">Repo: acs-aburada/oop-2025 (branch: main)</div>
+        <button id="btnLoadGithub" class="btn primary">Reload from GitHub</button>
+
+        <select id="fileSelect" class="select" disabled>
+          <option value="">Loading .cpp files…</option>
+        </select>
+
+        <button id="btnRandom" class="btn" disabled>Random</button>
+      </div>
+
+      <div class="hint">
+        This tool loads <b>.cpp</b> files automatically from the repository. Pick one and start typing.
+      </div>
+
+      <div class="hint dim">
+        Optional fallback: if GitHub rate limits you, you can still load labs via ZIP in a future update (not needed for default).
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <h2>2) Reference code</h2>
+
+        <div class="toolbar">
+          <div class="chip" id="chipFile">No file loaded</div>
+          <div class="chip dim" id="chipChars">0 chars</div>
+          <div class="chip dim" id="chipLines">0 lines</div>
+        </div>
+
+        <div id="referenceWrap" class="codewrap">
+          <pre id="reference" class="code reference">(Loading from GitHub…)</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3) Type here</h2>
+
+        <div class="toolbar">
+          <button id="btnStart" class="btn primary" disabled>Start</button>
+          <button id="btnReset" class="btn" disabled>Reset</button>
+          <button id="btnFinish" class="btn danger" disabled>Finish</button>
+        </div>
+
+        <textarea
+          id="typing"
+          class="typing"
+          placeholder="Click Start (or just begin typing) to start the timer..."
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          disabled
+        ></textarea>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Time</div>
+            <div class="value" id="statTime">0.00s</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">WPM (Gross)</div>
+            <div class="value" id="statWpmGross">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">WPM (Net)</div>
+            <div class="value" id="statWpmNet">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Accuracy</div>
+            <div class="value" id="statAcc">100%</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Errors</div>
+            <div class="value" id="statErr">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Error Rate</div>
+            <div class="value" id="statErrRate">0%</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Progress</div>
+            <div class="value" id="statProg">0%</div>
+          </div>
+        </div>
+
+        <div class="result" id="resultBox" hidden>
+          <div class="resultTop">
+            <div class="resultTitle">Run finished</div>
+            <div class="rank" id="rankBadge">RANK</div>
+          </div>
+
+          <div class="resultGrid">
+            <div class="mini">
+              <div class="miniLabel">Final Time</div>
+              <div class="miniValue" id="finalTime">0s</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Gross WPM</div>
+              <div class="miniValue" id="finalGross">0</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Net WPM</div>
+              <div class="miniValue" id="finalNet">0</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Accuracy</div>
+              <div class="miniValue" id="finalAcc">0%</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Errors</div>
+              <div class="miniValue" id="finalErr">0</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Error Rate</div>
+              <div class="miniValue" id="finalErrRate">0%</div>
+            </div>
+            <div class="mini">
+              <div class="miniLabel">Best Score (This File)</div>
+              <div class="miniValue" id="bestScore">—</div>
+            </div>
+          </div>
+
+          <div class="resultActions">
+            <button id="btnAgain" class="btn primary">Again</button>
+            <button id="btnCloseResult" class="btn ghost">Close</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>🏆 Ranks</h2>
+      <div class="ranks">
+        <div class="rankCard">
+          <div class="rankName">🐌 Turtle</div>
+          <div class="rankReq">Net &lt; 25 WPM</div>
+        </div>
+        <div class="rankCard">
+          <div class="rankName">🧪 Junior</div>
+          <div class="rankReq">25–40 WPM</div>
+        </div>
+        <div class="rankCard">
+          <div class="rankName">💻 Dev</div>
+          <div class="rankReq">40–55 WPM</div>
+        </div>
+        <div class="rankCard">
+          <div class="rankName">🔥 Fast</div>
+          <div class="rankReq">55–70 WPM</div>
+        </div>
+        <div class="rankCard">
+          <div class="rankName">⚡ Beast</div>
+          <div class="rankReq">70–85 WPM</div>
+        </div>
+        <div class="rankCard">
+          <div class="rankName">👑 Godlike</div>
+          <div class="rankReq">85+ WPM AND 97%+ accuracy</div>
+        </div>
+      </div>
+      <p class="hint dim">
+        Net WPM counts only correct characters. Fast + sloppy = lower rank 😄
+      </p>
+    </section>
+
+    <div id="helpModal" class="modal" hidden>
+      <div class="modalCard">
+        <div class="modalHeader">
+          <div class="modalTitle">Help</div>
+          <button id="btnCloseHelp" class="btn ghost">X</button>
+        </div>
+
+        <div class="modalBody">
+          <ol>
+            <li>The page auto-loads all <b>.cpp</b> files from <code>acs-aburada/oop-2025</code>.</li>
+            <li>Select a file from the dropdown.</li>
+            <li>Click <b>Start</b> or simply begin typing to start the timer.</li>
+            <li>Green = correct, red = wrong. Your current character is highlighted.</li>
+            <li>Click <b>Finish</b> to end and see full stats + rank.</li>
+          </ol>
+
+          <p class="hint">
+            Tip: Pressing <b>TAB</b> inserts 4 spaces automatically.
+          </p>
+
+          <p class="hint dim">
+            If GitHub blocks requests (rate limit), hit “Reload from GitHub” or try again later.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
 </html>
