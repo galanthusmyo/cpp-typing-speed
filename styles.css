@@ -60,16 +60,6 @@ body{
 
 .card h2{margin:0 0 14px 0; font-size:16px}
 
-.grid{
-  margin-top:16px;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:16px;
-}
-@media (max-width: 1050px){
-  .grid{grid-template-columns: 1fr}
-}
-
 .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
 
 .btn{
@@ -113,6 +103,20 @@ body{
   outline:none;
 }
 
+.select.small{
+  min-width: 180px;
+}
+
+.input{
+  width: 140px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline:none;
+}
+
 .hint{margin-top:10px; color:var(--muted); font-size:13px}
 .hint code{
   font-family: var(--mono);
@@ -137,15 +141,6 @@ body{
   background: rgba(0,0,0,.25);
 }
 
-.codewrap{
-  height: 420px;
-  overflow:auto;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.35);
-  padding: 12px;
-}
-
 .code{
   margin:0;
   font-family: var(--mono);
@@ -153,6 +148,54 @@ body{
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* SINGLE OVERLAY EDITOR */
+.editorWrap{
+  position: relative;
+  height: 520px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.35);
+  overflow: hidden;
+}
+
+/* The colored “target code” layer */
+.overlay{
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* The actual typing input layer */
+.typingOverlay{
+  position: absolute;
+  inset: 0;
+  padding: 12px;
+  width: 100%;
+  height: 100%;
+  resize: none;
+
+  background: transparent;
+  border: none;
+  outline: none;
+
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  /* Hide typed characters but keep caret */
+  color: transparent;
+  caret-color: rgba(233,236,255,.95);
+
+  overflow: auto;
+  z-index: 2;
 }
 
 .reference .ok{color: var(--good)}
@@ -168,28 +211,13 @@ body{
   outline: 1px solid rgba(109,123,255,.45);
 }
 
-.typing{
-  width:100%;
-  height: 240px;
-  resize: vertical;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.35);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 12.5px;
-  line-height: 1.55;
-  outline:none;
-}
-
 .stats{
   margin-top: 12px;
   display:grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap:10px;
 }
-@media (max-width: 700px){
+@media (max-width: 900px){
   .stats{grid-template-columns: repeat(2, minmax(0, 1fr))}
 }
 
@@ -269,6 +297,7 @@ body{
 .rankName{font-weight:900}
 .rankReq{margin-top:4px; color:var(--muted); font-size:12px}
 
+/* MODAL */
 .modal{
   position:fixed;
   inset:0;
@@ -277,8 +306,8 @@ body{
   background: rgba(0,0,0,.55);
   padding:16px;
 }
-.modal[hidden] {
-  display: none !important;
+.modal[hidden]{
+  display:none !important;
 }
 .modalCard{
   width:min(720px, 96vw);
