@@ -24,6 +24,8 @@
   </header>
 
   <main class="container">
+
+    <!-- LOAD FILES -->
     <section class="card">
       <h2>1) Load labs</h2>
 
@@ -43,128 +45,164 @@
       </div>
 
       <div class="hint dim">
-        Optional fallback: if GitHub rate limits you, you can still load labs via ZIP in a future update (not needed for default).
+        Note: <code>// comments</code> are removed automatically to avoid interference.
       </div>
     </section>
 
-    <section class="grid">
-      <section class="card">
-        <h2>2) Reference code</h2>
+    <!-- PRACTICE SETTINGS -->
+    <section class="card" style="margin-top:16px;">
+      <h2>2) Practice settings</h2>
 
-        <div class="toolbar">
-          <div class="chip" id="chipFile">No file loaded</div>
-          <div class="chip dim" id="chipChars">0 chars</div>
-          <div class="chip dim" id="chipLines">0 lines</div>
+      <div class="row">
+        <div class="chip">Mode: Countdown practice</div>
+
+        <select id="timerSelect" class="select small">
+          <option value="60">1 minute</option>
+          <option value="120">2 minutes</option>
+          <option value="300" selected>5 minutes</option>
+          <option value="600">10 minutes</option>
+          <option value="custom">Custom…</option>
+        </select>
+
+        <input
+          id="customSeconds"
+          class="input"
+          type="number"
+          min="10"
+          step="1"
+          placeholder="Seconds"
+          disabled
+        />
+
+        <div class="chip dim">
+          Remaining: <span id="remainingTime">--:--</span>
         </div>
+      </div>
 
-        <div id="referenceWrap" class="codewrap">
-          <pre id="reference" class="code reference">(Loading from GitHub…)</pre>
-        </div>
-      </section>
+      <div class="hint dim">
+        Tip: When the countdown ends, the run finishes automatically.
+      </div>
+    </section>
 
-      <section class="card">
-        <h2>3) Type here</h2>
+    <!-- SINGLE OVERLAY EDITOR -->
+    <section class="card" style="margin-top:16px;">
+      <h2>3) Practice (type directly on the code)</h2>
 
-        <div class="toolbar">
-          <button id="btnStart" class="btn primary" disabled>Start</button>
-          <button id="btnReset" class="btn" disabled>Reset</button>
-          <button id="btnFinish" class="btn danger" disabled>Finish</button>
-        </div>
+      <div class="toolbar">
+        <div class="chip" id="chipFile">No file loaded</div>
+        <div class="chip dim" id="chipChars">0 chars</div>
+        <div class="chip dim" id="chipLines">0 lines</div>
+
+        <div style="flex:1"></div>
+
+        <button id="btnStart" class="btn primary" disabled>Start</button>
+        <button id="btnReset" class="btn" disabled>Reset</button>
+        <button id="btnFinish" class="btn danger" disabled>Finish</button>
+      </div>
+
+      <div class="editorWrap">
+        <pre id="overlay" class="code overlay">(Loading from GitHub…)</pre>
 
         <textarea
           id="typing"
-          class="typing"
-          placeholder="Click Start (or just begin typing) to start the timer..."
+          class="typingOverlay"
+          placeholder="Click Start (or just type) to begin..."
           spellcheck="false"
           autocapitalize="off"
           autocomplete="off"
           autocorrect="off"
           disabled
         ></textarea>
+      </div>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="label">Time</div>
-            <div class="value" id="statTime">0.00s</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Time</div>
+          <div class="value" id="statTime">0.00s</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Remaining</div>
+          <div class="value" id="statRemain">--:--</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">WPM (Gross)</div>
+          <div class="value" id="statWpmGross">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">WPM (Net)</div>
+          <div class="value" id="statWpmNet">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Accuracy</div>
+          <div class="value" id="statAcc">100%</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Errors</div>
+          <div class="value" id="statErr">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Error Rate</div>
+          <div class="value" id="statErrRate">0%</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Progress</div>
+          <div class="value" id="statProg">0%</div>
+        </div>
+      </div>
+
+      <div class="result" id="resultBox" hidden>
+        <div class="resultTop">
+          <div class="resultTitle">Run finished</div>
+          <div class="rank" id="rankBadge">RANK</div>
+        </div>
+
+        <div class="resultGrid">
+          <div class="mini">
+            <div class="miniLabel">Final Time</div>
+            <div class="miniValue" id="finalTime">0s</div>
           </div>
-
-          <div class="stat">
-            <div class="label">WPM (Gross)</div>
-            <div class="value" id="statWpmGross">0</div>
+          <div class="mini">
+            <div class="miniLabel">Gross WPM</div>
+            <div class="miniValue" id="finalGross">0</div>
           </div>
-
-          <div class="stat">
-            <div class="label">WPM (Net)</div>
-            <div class="value" id="statWpmNet">0</div>
+          <div class="mini">
+            <div class="miniLabel">Net WPM</div>
+            <div class="miniValue" id="finalNet">0</div>
           </div>
-
-          <div class="stat">
-            <div class="label">Accuracy</div>
-            <div class="value" id="statAcc">100%</div>
+          <div class="mini">
+            <div class="miniLabel">Accuracy</div>
+            <div class="miniValue" id="finalAcc">0%</div>
           </div>
-
-          <div class="stat">
-            <div class="label">Errors</div>
-            <div class="value" id="statErr">0</div>
+          <div class="mini">
+            <div class="miniLabel">Errors</div>
+            <div class="miniValue" id="finalErr">0</div>
           </div>
-
-          <div class="stat">
-            <div class="label">Error Rate</div>
-            <div class="value" id="statErrRate">0%</div>
+          <div class="mini">
+            <div class="miniLabel">Error Rate</div>
+            <div class="miniValue" id="finalErrRate">0%</div>
           </div>
-
-          <div class="stat">
-            <div class="label">Progress</div>
-            <div class="value" id="statProg">0%</div>
+          <div class="mini">
+            <div class="miniLabel">Best Score (This File)</div>
+            <div class="miniValue" id="bestScore">—</div>
           </div>
         </div>
 
-        <div class="result" id="resultBox" hidden>
-          <div class="resultTop">
-            <div class="resultTitle">Run finished</div>
-            <div class="rank" id="rankBadge">RANK</div>
-          </div>
-
-          <div class="resultGrid">
-            <div class="mini">
-              <div class="miniLabel">Final Time</div>
-              <div class="miniValue" id="finalTime">0s</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Gross WPM</div>
-              <div class="miniValue" id="finalGross">0</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Net WPM</div>
-              <div class="miniValue" id="finalNet">0</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Accuracy</div>
-              <div class="miniValue" id="finalAcc">0%</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Errors</div>
-              <div class="miniValue" id="finalErr">0</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Error Rate</div>
-              <div class="miniValue" id="finalErrRate">0%</div>
-            </div>
-            <div class="mini">
-              <div class="miniLabel">Best Score (This File)</div>
-              <div class="miniValue" id="bestScore">—</div>
-            </div>
-          </div>
-
-          <div class="resultActions">
-            <button id="btnAgain" class="btn primary">Again</button>
-            <button id="btnCloseResult" class="btn ghost">Close</button>
-          </div>
+        <div class="resultActions">
+          <button id="btnAgain" class="btn primary">Again</button>
+          <button id="btnCloseResult" class="btn ghost">Close</button>
         </div>
-      </section>
+      </div>
     </section>
 
-    <section class="card">
+    <!-- RANKS -->
+    <section class="card" style="margin-top:16px;">
       <h2>🏆 Ranks</h2>
       <div class="ranks">
         <div class="rankCard">
@@ -193,10 +231,11 @@
         </div>
       </div>
       <p class="hint dim">
-        Net WPM counts only correct characters. Fast + sloppy = lower rank 😄
+        Net WPM counts only correct characters. Fast + sloppy = lower rank.
       </p>
     </section>
 
+    <!-- HELP MODAL -->
     <div id="helpModal" class="modal" hidden>
       <div class="modalCard">
         <div class="modalHeader">
@@ -208,9 +247,10 @@
           <ol>
             <li>The page auto-loads all <b>.cpp</b> files from <code>acs-aburada/oop-2025</code>.</li>
             <li>Select a file from the dropdown.</li>
+            <li>Select your practice duration (presets or custom seconds).</li>
             <li>Click <b>Start</b> or simply begin typing to start the timer.</li>
             <li>Green = correct, red = wrong. Your current character is highlighted.</li>
-            <li>Click <b>Finish</b> to end and see full stats + rank.</li>
+            <li>The run ends automatically when the countdown hits zero.</li>
           </ol>
 
           <p class="hint">
