@@ -515,6 +515,20 @@ typing.addEventListener("keydown", (e) => {
 
 /* === Start timer on first input === */
 typing.addEventListener("input", () => {
+  if (typing.value.includes("\t")) {
+    const start = typing.selectionStart;
+    const end = typing.selectionEnd;
+    const beforeLen = typing.value.length;
+
+    typing.value = typing.value.replaceAll("\t", "    ");
+
+    const afterLen = typing.value.length;
+    const diff = afterLen - beforeLen;
+
+    typing.selectionStart = start + diff;
+    typing.selectionEnd = end + diff;
+  }
+
   if (!started && !finished && targetText) {
     startRun();
   }
