@@ -277,6 +277,9 @@ body{
   background: rgba(0,0,0,.55);
   padding:16px;
 }
+.modal[hidden] {
+  display: none !important;
+}
 .modalCard{
   width:min(720px, 96vw);
   border-radius: 18px;
