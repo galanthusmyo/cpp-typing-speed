@@ -404,9 +404,10 @@ async function fetchRaw(path) {
   text = text.replaceAll("\r\n", "\n");
 
   // remove // comments
-  text = stripLineCommentsCpp(text);
+text = stripLineCommentsCpp(text);
+text = text.replaceAll("\t", "    ");
+return text;
 
-  return text;
 }
 
 function setDropdownLoading(text) {
